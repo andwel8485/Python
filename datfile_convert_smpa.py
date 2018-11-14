@@ -210,7 +210,7 @@ def smart_life_data_process(file_name, file_dir):
 
             _acc_convert_to_smpa(acc, acc_file_name, file_type, sample_rate, utc_start_time)
 
-    else:
-        print("Wrong file type, please check your file name.")
+    
+
 
 
