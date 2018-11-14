@@ -151,8 +151,7 @@ def smart_life_data_process(file_name, file_dir):
 
     elif "DAILY" in file_name:
         with open(file_name, "rb") as f:
-            daily_file_name = file_dir + file_name.split("\\")[-1][:-5] + ".smpa"
-            
+            daily_file_name = file_dir + "/" + file_name.split("/")[-1][:-5] + ".smpa" 
             with open(daily_file_name, "wt") as daily_smpa:
                 pass
 
