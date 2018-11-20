@@ -1,27 +1,29 @@
 import struct
 import datetime
 import csv
+import os
 
 _ECG_RAW_DATA_CHARACTER_LENTH = 32
 _ACC_RAW_DATA_CHARACTER_LENTH = 22
 
-_UTC_TYPE = 0
-_FILE_FORMAT_VERSION_TYPE = 4
-_MAC_ADDRESS_TYPE = 6
-_ECG_RAW_DATA_CHARACTER = 32
-_TPR_TYPE = 41
-_POSTURE_LOG_TYPE = 54
-_SLEEP_MODE_TYPE = 80
+class FileType:
+    UTC_TYPE = 0
+    FILE_FORMAT_VERSION_TYPE = 4
+    MAC_ADDRESS_TYPE = 6
+    ECG_RAW_DATA_CHARACTER = 32
+    TPR_TYPE = 41
+    POSTURE_LOG_TYPE = 54
+    SLEEP_MODE_TYPE = 80
 
 def _change_time_foramt(t):
     readable = datetime.datetime.fromtimestamp(t)
-    _change_time_foramtd = readable.strftime("%Y%m%d%H%M%S")
-    return _change_time_foramtd
+    _change_time_foramt = readable.strftime("%Y%m%d%H%M%S")
+    return _change_time_foramt
 
-def _ecg_convert_to_smpa(ecg, ecg_file_name, file_type, utc_start_time,
+def _construct_ecg_smpa_foramt(ecg, ecg_file_name, file_type, utc_start_time,
                          sample_rate, adc_resolution, adc_signed):
     bit = 8
-    BYTES = int(adc_resolution / bit)
+    BYTES = int(adc_resolution / bit) 
     time_offset_lenth = 2 
     while True:
         raw_data_list = []
@@ -43,8 +45,9 @@ def _ecg_convert_to_smpa(ecg, ecg_file_name, file_type, utc_start_time,
         with open(ecg_file_name, 'at', newline='') as ecg_smpa:
             csvout = csv.writer(ecg_smpa)
             csvout.writerows(raw_data_list)
+        return raw_data_list
 
-def _tpr_convert_to_smpa(daily_file_name, file_type, tpr_content):
+def _construct_daily_tpr_content(file_type, tpr_content):
     
     subtype = format(tpr_content[0], "08b")
     mode = int(subtype[:2])
@@ -68,38 +71,32 @@ def _tpr_convert_to_smpa(daily_file_name, file_type, tpr_content):
         except:
             read = False
             break
+    return tpr_raw_data_list
 
-    with open(daily_file_name, "at", newline="") as tpr_smpa:
-        csvout = csv.writer(tpr_smpa)
-        csvout.writerows(tpr_raw_data_list)
-
-def _file_format(daily_file_name, file_type, file_version):
+def _construct_daily_file_format(file_type, file_version):
     file_format_version = int.from_bytes(file_version, byteorder="little")
-    file_format_version_list = [[file_type, file_format_version]]
-    
-    with open(daily_file_name, "at", newline="") as fmv_smpa:
-        csvout = csv.writer(fmv_smpa)
-        csvout.writerows(file_format_version_list)
+    file_format_version_list = [[file_type, file_format_version]]      
+    return file_format_version_list
 
-def _utc_time_zone(daily_file_name, file_type, utc_time_zone):
+def _construct_daily_utc_time_zone(file_type, utc_time_zone):
     utc_time = int.from_bytes(utc_time_zone[:4], byteorder="little")
     utc_time_converted = _change_time_foramt(utc_time)
     utc_zone = int.from_bytes(utc_time_zone[4:], byteorder="little")
-    utc_time_zone_list = [[file_type, utc_time_converted, utc_zone]]
-    
-    with open(daily_file_name, "at", newline="") as utc_smpa:
-        csvout = csv.writer(utc_smpa)
-        csvout.writerows(utc_time_zone_list)
+    utc_time_zone_list = [[file_type, utc_time_converted, utc_zone]]     
+    return utc_time_zone_list
 
-def _mac_address(daily_file_name, file_type, mac_address):
+def _construct_daily_mac_address(file_type, mac_address):
     mc_ad = int.from_bytes(mac_address, byteorder="little")
     mac_address_list = [[file_type, mc_ad]]
+    return mac_address_list
 
-    with open(daily_file_name, "at", newline="") as mac_smpa:
-        csvout = csv.writer(mac_smpa)
-        csvout.writerows(mac_address_list)
+def _construct_daily_sleep_mode(file_type, _sleep_mode):
+    return None
 
-def _acc_convert_to_smpa(acc, acc_file_name, file_type, sample_rate, utc_start_time):
+def _construct_daily_posture_log(file_type, _posture_log):
+    return None
+
+def _construct_acc_smpa_format(acc, acc_file_name, file_type, sample_rate, utc_start_time):
     while True:
         time_offset = acc.read(2)
         if time_offset == b"":
@@ -122,76 +119,42 @@ def _acc_convert_to_smpa(acc, acc_file_name, file_type, sample_rate, utc_start_t
             csvout = csv.writer(acc_smpa)
             csvout.writerows(acc_raw_data_list)
 
-def smart_life_data_process(file_name, file_dir):
-    
-    if "ECG" in file_name:
+
+def _convert_ecg_raw_data(file_name, file_dir):
+    try:
         with open(file_name, "rb") as ecg:
-            file_header = ecg.read(_ECG_RAW_DATA_CHARACTER_LENTH)
-            file_format_version, utc_start_time, utc_time_zone,  record_interval, \
-                file_type, sample_rate, adc_resolution, adc_vref, amp_gain, amp_offset, adc_signed \
-                = struct.unpack('<HIB6xIBHBH2IB', file_header)
-            mac_address = int.from_bytes(file_header[7:13], byteorder="little")
-            file_head_contents = [
-                [
-                _ECG_RAW_DATA_CHARACTER, sample_rate, adc_resolution,
-                adc_vref, amp_gain, amp_offset, adc_signed
-                ]
+
+                file_header = ecg.read(_ECG_RAW_DATA_CHARACTER_LENTH)
+                file_format_version, utc_start_time, utc_time_zone,  record_interval, \
+                    file_type, sample_rate, adc_resolution, adc_vref, amp_gain, amp_offset, adc_signed \
+                    = struct.unpack('<HIB6xIBHBH2IB', file_header)
+                mac_address = int.from_bytes(file_header[7:13], byteorder="little")
+                file_head_contents = [
+                    [
+                    FileType.ECG_RAW_DATA_CHARACTER, sample_rate, adc_resolution,
+                    adc_vref, amp_gain, amp_offset, adc_signed
                     ]
-            time_list = [[_UTC_TYPE, _change_time_foramt(utc_start_time)]]
+                        ]
+                time_list = [[FileType.UTC_TYPE, _change_time_foramt(utc_start_time)]]
 
-            ecg_file_name = file_dir + "\\ECG_" + _change_time_foramt(utc_start_time) + ".smpa"
-            with open(ecg_file_name, 'wt', newline ='') as ecg_smpa:
-                csvout = csv.writer(ecg_smpa)
-                csvout.writerows(file_head_contents)
-                csvout.writerows(time_list)
+                ecg_file_name = file_dir + "\\ECG_" + _change_time_foramt(utc_start_time) + ".smpa"
+                with open(ecg_file_name, 'wt', newline ='') as ecg_smpa:
+                    csvout = csv.writer(ecg_smpa)
+                    csvout.writerows(file_head_contents)
+                    csvout.writerows(time_list)
 
-            _ecg_convert_to_smpa(
-                ecg, ecg_file_name, file_type, utc_start_time, 
-                sample_rate, adc_resolution, adc_signed)
-
-    elif "DAILY" in file_name:
-        with open(file_name, "rb") as f:
-            daily_file_name = file_dir + "/" + file_name.split("/")[-1][:-5] + ".smpa" 
-            with open(daily_file_name, "wt") as daily_smpa:
-                pass
-
-            while True:
-                file_type = f.read(1)
-                file_lenth = f.read(1)
-                if (file_type == b'') and (file_lenth == b''):
-                    break
-                file_type = int.from_bytes(file_type, byteorder="little")
-                file_lenth = int.from_bytes(file_lenth, byteorder="little")
-
-                if file_type == _TPR_TYPE:
-                    try:
-                        tpr_content = f.read(file_lenth)
-                        _tpr_convert_to_smpa(daily_file_name, file_type, tpr_content)
-                    except:
-                        tpr_content = f.read()
-                        _tpr_convert_to_smpa(daily_file_name, file_type, tpr_content)
-                        
-                elif file_type == _FILE_FORMAT_VERSION_TYPE:
-                    file_version = f.read(file_lenth)
-                    _file_format(daily_file_name, file_type, file_version)
-                            
-                elif file_type == _UTC_TYPE:
-                    utc_time_zone = f.read(file_lenth)
-                    _utc_time_zone(daily_file_name, file_type, utc_time_zone)
-
-                elif file_type == _MAC_ADDRESS_TYPE:
-                    mac_address = f.read(file_lenth)
-                    _mac_address(daily_file_name, file_type, mac_address)
-
-                elif file_type == _SLEEP_MODE_TYPE:
-                    sleep_mode = f.read(file_lenth)
-
-                elif file_type == _POSTURE_LOG_TYPE:
-                    ecg_raw_character = f.read(file_lenth)
-
-    elif "ACC" in file_name:
+                _construct_ecg_smpa_foramt(
+                    ecg, ecg_file_name, file_type, utc_start_time, 
+                    sample_rate, adc_resolution, adc_signed)
+                return True
+    except:
+        return False
+def _convert_acc_raw_data(file_name, file_dir):
+    try:
         with open(file_name, "rb") as acc:
             file_header = acc.read(_ACC_RAW_DATA_CHARACTER_LENTH)
+            
+
             file_format_version, utc_start_time, utc_time_zone, \
                 record_interval, file_type, sample_rate, resolution, ranges \
                 = struct.unpack('<HIB6xIBH2B', file_header)
@@ -207,9 +170,60 @@ def smart_life_data_process(file_name, file_dir):
                 csvout = csv.writer(acc_smpa)
                 csvout.writerows(file_head_contents)
 
-            _acc_convert_to_smpa(acc, acc_file_name, file_type, sample_rate, utc_start_time)
+            _construct_acc_smpa_format(acc, acc_file_name, file_type, sample_rate, utc_start_time)
+        return True
+    except:
+        return False
 
-    
+def smart_life_data_process(file_name, file_dir):
+    try:
+        if "ECG" in file_name:
+            return _convert_ecg_raw_data(file_name, file_dir)
+            
 
+        elif "DAILY" in file_name:
+            with open(file_name, "rb") as f:
+                daily_file_name = file_dir + "\\" + os.path.basename(file_name)[:-5] + ".smpa" 
+                
+                with open(daily_file_name, "wt") as daily_smpa:
+                    pass
+
+                while True:
+                    daily_file_map = {
+                    FileType.UTC_TYPE: _construct_daily_utc_time_zone, 
+                    FileType.TPR_TYPE: _construct_daily_tpr_content,
+                    FileType.FILE_FORMAT_VERSION_TYPE: _construct_daily_file_format,
+                    FileType.MAC_ADDRESS_TYPE: _construct_daily_mac_address,
+                    FileType.POSTURE_LOG_TYPE: _construct_daily_posture_log,
+                    FileType.SLEEP_MODE_TYPE: _construct_daily_sleep_mode
+                    }
+
+                    file_type = f.read(1)
+                    file_lenth = f.read(1)
+                    if (file_type == b'') and (file_lenth == b''):
+                        break
+                    file_type = int.from_bytes(file_type, byteorder="little")
+                    file_lenth = int.from_bytes(file_lenth, byteorder="little")
+                    file_content = f.read(file_lenth)
+
+                    get_func = daily_file_map.get(file_type)
+                    result = get_func(file_type, file_content)
+
+                    if result:
+                        with open(daily_file_name, "at", newline="") as daily:
+                            csvout = csv.writer(daily)
+                            csvout.writerows(result)          
+            return True
+
+        elif "ACC" in file_name:
+            return _convert_acc_raw_data(file_name, file_dir)
+
+        else:
+            return False
+    except FileNotFoundError:
+        
+        return "FileError"
+    except:
+        print("other mistake")
 
 
