@@ -20,8 +20,8 @@ def _change_time_foramt(t):
     _change_time_foramt = readable.strftime("%Y%m%d%H%M%S")
     return _change_time_foramt
 
-def _construct_ecg_smpa_foramt(ecg, ecg_file_name, file_type, utc_start_time,
-                         sample_rate, adc_resolution, adc_signed):
+def _construct_ecg_smpa_foramt(ecg, ecg_file_name, file_type,
+                               sample_rate, adc_resolution, adc_signed):
     bit = 8
     BYTES = int(adc_resolution / bit) 
     time_offset_lenth = 2 
@@ -31,13 +31,13 @@ def _construct_ecg_smpa_foramt(ecg, ecg_file_name, file_type, utc_start_time,
         time_offset = ecg.read(time_offset_lenth)
         if time_offset == b"":
             break
-        time_offset = int.from_bytes(time_offset, byteorder='little', signed=True)
+        time_offset = int.from_bytes(time_offset, byteorder='little', signed=adc_signed)
             
         while rate <= sample_rate :
             raw_data = ecg.read(BYTES)
             if raw_data == b"":
                 break
-            raw_data = int.from_bytes(raw_data, byteorder='little', signed=True)
+            raw_data = int.from_bytes(raw_data, byteorder='little', signed=adc_signed)
             raw_data_smpa = [file_type, time_offset, raw_data, " ", " "]
             raw_data_list.append(raw_data_smpa)
             rate += 1
@@ -45,13 +45,13 @@ def _construct_ecg_smpa_foramt(ecg, ecg_file_name, file_type, utc_start_time,
         with open(ecg_file_name, 'at', newline='') as ecg_smpa:
             csvout = csv.writer(ecg_smpa)
             csvout.writerows(raw_data_list)
-        return raw_data_list
+    return raw_data_list 
 
 def _construct_daily_tpr_content(file_type, tpr_content):
     
     subtype = format(tpr_content[0], "08b")
     mode = int(subtype[:2])
-    interval = int(subtype[2:])    
+    interval = int(subtype[2:])   
     temp_index = 1
     pulse_index = 2
     respiration_index = 3
@@ -96,7 +96,7 @@ def _construct_daily_sleep_mode(file_type, _sleep_mode):
 def _construct_daily_posture_log(file_type, _posture_log):
     return None
 
-def _construct_acc_smpa_format(acc, acc_file_name, file_type, sample_rate, utc_start_time):
+def _construct_acc_smpa_format(acc, acc_file_name, file_type, sample_rate):
     while True:
         time_offset = acc.read(2)
         if time_offset == b"":
@@ -118,35 +118,35 @@ def _construct_acc_smpa_format(acc, acc_file_name, file_type, sample_rate, utc_s
         with open(acc_file_name, "at", newline="") as acc_smpa:
             csvout = csv.writer(acc_smpa)
             csvout.writerows(acc_raw_data_list)
-
+    
 
 def _convert_ecg_raw_data(file_name, file_dir):
     try:
         with open(file_name, "rb") as ecg:
 
-                file_header = ecg.read(_ECG_RAW_DATA_CHARACTER_LENTH)
-                file_format_version, utc_start_time, utc_time_zone,  record_interval, \
-                    file_type, sample_rate, adc_resolution, adc_vref, amp_gain, amp_offset, adc_signed \
-                    = struct.unpack('<HIB6xIBHBH2IB', file_header)
-                mac_address = int.from_bytes(file_header[7:13], byteorder="little")
-                file_head_contents = [
-                    [
-                    FileType.ECG_RAW_DATA_CHARACTER, sample_rate, adc_resolution,
-                    adc_vref, amp_gain, amp_offset, adc_signed
+            file_header = ecg.read(_ECG_RAW_DATA_CHARACTER_LENTH)
+            file_format_version, utc_start_time, utc_time_zone,  record_interval, \
+                file_type, sample_rate, adc_resolution, adc_vref, amp_gain, amp_offset, adc_signed \
+                = struct.unpack('<HIB6xIBHBH2IB', file_header)
+            mac_address = int.from_bytes(file_header[7:13], byteorder="little")
+            file_head_contents = [
+                [
+                FileType.ECG_RAW_DATA_CHARACTER, sample_rate, adc_resolution,
+                adc_vref, amp_gain, amp_offset, adc_signed
+                ]
                     ]
-                        ]
-                time_list = [[FileType.UTC_TYPE, _change_time_foramt(utc_start_time)]]
+            format_time = _change_time_foramt(utc_start_time)
+            time_list = [[FileType.UTC_TYPE, _change_time_foramt(utc_start_time)]]
 
-                ecg_file_name = file_dir + "\\ECG_" + _change_time_foramt(utc_start_time) + ".smpa"
-                with open(ecg_file_name, 'wt', newline ='') as ecg_smpa:
-                    csvout = csv.writer(ecg_smpa)
-                    csvout.writerows(file_head_contents)
-                    csvout.writerows(time_list)
+            ecg_file_name = file_dir + "\\ECG_" + format_time + ".smpa"
+            with open(ecg_file_name, 'wt', newline ='') as ecg_smpa:
+                csvout = csv.writer(ecg_smpa)
+                csvout.writerows(file_head_contents)
+                csvout.writerows(time_list)
 
-                _construct_ecg_smpa_foramt(
-                    ecg, ecg_file_name, file_type, utc_start_time, 
-                    sample_rate, adc_resolution, adc_signed)
-                return True
+            _construct_ecg_smpa_foramt(ecg, ecg_file_name, file_type, 
+                                        sample_rate, adc_resolution, adc_signed)
+        return  True
     except:
         return False
 def _convert_acc_raw_data(file_name, file_dir):
@@ -165,12 +165,13 @@ def _convert_acc_raw_data(file_name, file_dir):
                 record_interval, file_type, sample_rate, resolution, ranges
                 ]
                     ]
-            acc_file_name = file_dir + "\\ACC_" + _change_time_foramt(utc_start_time) + ".smpa"
+            format_time = _change_time_foramt(utc_start_time)
+            acc_file_name = file_dir + "\\ACC_" + format_time + ".smpa"
             with open(acc_file_name, "wt", newline="") as acc_smpa:
                 csvout = csv.writer(acc_smpa)
                 csvout.writerows(file_head_contents)
 
-            _construct_acc_smpa_format(acc, acc_file_name, file_type, sample_rate, utc_start_time)
+            _construct_acc_smpa_format(acc, acc_file_name, file_type, sample_rate)
         return True
     except:
         return False
