@@ -24,80 +24,27 @@ class CliResponseParser():
         "CLI=get file_contents": parser_class.SysGetFileContents(),
          }
         
-    def mapping_parser(self, cmd, parameters):
+    def _mapping_parser(self, cmd, parameters):
         parser_object = self.map_dic.get(cmd)
         parser_object.attribute_parser(parameters, cmd)
         return parser_object       
 
-    def cli_cmd(self, input_repsonse):
+    def _cli_cmd(self, input_repsonse):
         try:
             cmd_list = input_repsonse.split(":")
             self.cmd = cmd_list[0]
             self.parameters = cmd_list[1]
         except:
-            return 
+            return False
 
     def create_parser(self, input_repsonse):
-        self.cli_cmd(input_repsonse)
-        return self.mapping_parser(self.cmd, self.parameters)
+        self._cli_cmd(input_repsonse)
+        return self._mapping_parser(self.cmd, self.parameters)
 
 
-    # def mapping_func(self):
-    #     self.parser_object = self.map_dic.get(self.cmd)
-    #     # create_func = self.map_dic.get(self.cmd)
-        
-        # create_func()
+   
 
-    # def create_syssetrtc(self):
-    #     self.parser_object = parser_class.SysSetRtc(self.parameters)
-
-    # def create_sysgetstatus(self):
-    #     self.parser_object = parser_class.SysGetStatus(self.parameters)
-
-    # def create_syssetsystemreset(self):
-    #     self.parser_object = parser_class.SysSetSystem(self.parameters)
-
-    # def create_sysgetrtc(self):
-    #     self.parser_object = parser_class.SysGetRtc(self.parameters)
-
-    # def create_syssetutc(self):
-    #     self.parser_object = parser_class.SysSetUtc(self.parameters)
-
-    # def create_sysgetutc(self):
-    #     self.parser_object = parser_class.SysGetUtc(self.parameters)
-        
-    # def create_sysgetrsoc(self):
-    #     self.parser_object = parser_class.SysGetRsoc(self.parameters)
-        
-
-
-
-# def test_func(parameters, cmd):
-#     map_dic = {
-#         "CLI=get status": parser_class.SysGetStatus(parameters),
-#         "CLI=set reset": parser_class.SysSetSystem(parameters),
-#         "CLI=set RTC": parser_class.SysSetRtc(parameters),
-#         "CLI=get RTC": parser_class.SysGetRtc(parameters),
-#         "CLI=set UTC": parser_class.SysSetUtc(parameters),
-#         "CLI=get UTC": parser_class.SysGetUtc(parameters),
-#         "CLI=get SOC": parser_class.SysGetRsoc(parameters)
-#          }
-#     parser_object = map_dic.get(cmd)  
-#     return parser_object
-
-
-
-
-
-
-
-
-# cli = CliResponseParser("CLI=get status:MAC=xx.xx.xx.xx.xx.xx,Project_Name=nnnnnn,CLI_Version=Vc,Boot_Version=Vb.b.b,HW_Version=Vh.h.h,FW_Version=Vf.f.f,CLOCK=YYYYMMDDhhmmss,Storage_Capacity=tttttt,Last_Capacity=rrrrrr,len")
-
-
-
-
-
+#Test code
 cli = CliResponseParser()
 get_sysobj = cli.create_parser("CLI=get status:MAC=xx.xx.xx.xx.xx.xx,Project_Name=nnnnnn,CLI_Version=Vc,Boot_Version=Vb.b.b,HW_Version=Vh.h.h,FW_Version=Vf.f.f,CLOCK=YYYYMMDDhhmmss,Storage_Capacity=tttttt,Last_Capacity=rrrrrr,len")
 set_sysobj = cli.create_parser("CLI=set reset:x,len")
@@ -113,7 +60,6 @@ information_object = cli.create_parser("CLI= set pi:gender height weight age,len
 file_list_object = cli.create_parser("CLI=get file_list:nnnnnnnn,...,nnnnnnnn,len")
 file_size_object = cli.create_parser("CLI=get file_size:ssss,len")
 file_contents_object = cli.create_parser("CLI=get file_contents:nnnnnnnn,ssss,eeee,len\r\n[data 1][data 2]…[data N][Checksum]")
-# obj_list = [get_sysobj, set_sysobj, rtc_object, utc_object]
 
 print("_"*50)
 print("get_sysobj type:", type(get_sysobj), "get_sysobj name:", get_sysobj.cmd, "\nmac:", get_sysobj.mac, "\nProject_Name:", get_sysobj.project_name)
@@ -151,26 +97,3 @@ print("get_filecontents_obj type:", type(file_contents_object), "\nfile_name:", 
 
 
 
-# cli = CliResponseParser("CLI=set RTC:YYYYMMDDhhmmss,len")
-# print(cli.parser_object.date)
-
-
-# cli = CliResponseParser("CLI=get RTC:YYYYMMDDhhmmss,len")
-# print(cli.parser_object.date)
-
-
-# cli = CliResponseParser("CLI=set UTC:YYYYMMDhhmmss,TimeZone,len")
-# print(cli.parser_object.date)
-# print(cli.parser_object.time_zone)
-
-
-# cli = CliResponseParser("CLI=get UTC:YYYYMMDhhmmss,TimeZone,len")
-# print(cli.parser_object.date)
-# print(cli.parser_object.time_zone)
-
-# cli = CliResponseParser("CLI=get SOC:x,len")
-# print(cli.parser_object.rsoc)
-
-
-
-# print(cli.parser_object.len)
