@@ -1,3 +1,4 @@
+import parser_type
 class CommandStructure():
     def __init__(self):
         self.cmd = None
@@ -154,15 +155,6 @@ class SysGetFileSize(CommandStructure):
         super().__init__()      
         self.file_size = None 
                
-    def attribute_parser(self, parameters, cmd): 
-        self.cmd = cmd  
-        self.file_size, self.len = parameters.split(",")
-
-class SysGetFileContents(CommandStructure):
-    def __init__(self):
-        super().__init__()    
-        self.file_ = None 
-                
     def attribute_parser(self, parameters, cmd): 
         self.cmd = cmd  
         self.file_size, self.len = parameters.split(",")
@@ -330,35 +322,65 @@ class SysSetSensorRange(CommandStructure):
         self.type, self.range = content.split(" ")
 
 
-map_dic = {
-        "CLI=get status": SysGetStatus(),
-        "CLI=set reset": SysSetSystem(),
-        "CLI=set RTC": SysSetRtc(),
-        "CLI=get RTC": SysGetRtc(),
-        "CLI=set UTC": SysSetUtc(),
-        "CLI=get UTC": SysGetUtc(),
-        "CLI=get SOC": SysGetRsoc(),
-        "CLI= set MFG": SysSetManufactureCode(),
-        "CLI= get ResetCounter": SysGetResetCounter(),
-        "CLI= set ResetCounter": SysSetResetCounter(),
-        "CLI=set boot": SystSetSystemModetoBootMode(),
-        "CLI=set mode": SysSetProjectMode(),
-        "CLI= set pi": SysSetPersonalInformation(),
-        "CLI=get file_list": SysGetFileList(),
-        "CLI=get file_size": SysGetFileSize(),
-        "CLI=get file_contents": SysGetFileContents(),
-        "CLI=rm file": SysRemoveFile(),
-        "CLI=file_test": SysCreateTestFile(),
-        "CLI=get dat_char": SystGetBinaryRawData(),
-        "CLI=stop dat": SystemStopSendBinaryRawData(),
-        "CLI=stop dat_cmp": SystemStopSendBinaryRawDataWithCompression(),
-        "CLI=set dat_eps": SysSetPacketSizeOfECG(),
-        "CLI=get dat_eps": SysGetPacketSizeOfECG(),
-        "CLI=start calib": SysStartCalibrationACC(),
-        "CLI=set odr": SysSetMotionDataRate(),
-        "CLI=get range": SysGetSensorRange(),
-        "CLI=set range": SysSetSensorRange()
-         }
+
+def create_parser(cmd):
+    if cmd == 1:
+        return SysGetStatus()
+    elif cmd == 2:
+        return SysSetSystem()
+    elif cmd == 3:
+        return SysSetRtc()
+    elif cmd == 4: 
+        return SysSetRtc()
+    elif cmd == 5:
+        return SysSetUtc()
+    elif cmd == 6:
+        return SysGetUtc()
+    elif cmd == 7:
+        return SysGetRsoc()
+    elif cmd == 8:
+        return SysSetManufactureCode()
+    elif cmd == 9:
+        return SysGetResetCounter()
+    elif cmd == 10:
+        return SysSetResetCounter()
+    elif cmd == 11:
+        return SystSetSystemModetoBootMode()
+    elif cmd == 12:
+        return SysSetProjectMode()
+    elif cmd == 13:
+        return SysSetPersonalInformation()
+    elif cmd == 14:
+        return SysGetFileList()
+    elif cmd == 15:
+        return SysGetFileSize()
+    elif cmd == 16:
+        return SysGetFileContents()
+    elif cmd == 17:
+        return SysRemoveFile()
+    elif cmd == 18:
+        return SysCreateTestFile()
+    elif cmd == 19:
+        return SystGetBinaryRawData()
+    elif cmd == 20:
+        return SystemStopSendBinaryRawData()
+    elif cmd == 21:
+        return SystemStopSendBinaryRawDataWithCompression()
+    elif cmd == 22:
+        return SysSetPacketSizeOfECG()
+    elif cmd == 23:
+        return SysGetPacketSizeOfECG()
+    elif cmd == 24:
+        return SysStartCalibrationACC()
+    elif cmd == 25:
+        return SysSetMotionDataRate()
+    elif cmd == 26:
+        return SysGetSensorRange()
+    elif cmd == 27:
+        return SysSetSensorRange()
+
+
+
                    
             
 
