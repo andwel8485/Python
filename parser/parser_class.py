@@ -1,4 +1,7 @@
 import parser_type
+import dat_parser_factory
+
+
 class CommandStructure():
     def __init__(self):
         self.cmd = None
@@ -321,6 +324,112 @@ class SysSetSensorRange(CommandStructure):
         content, self.len = parameters.split(",")
         self.type, self.range = content.split(" ")
 
+class SysSendRawData(CommandStructure):
+    def __init__(self):
+        self.type = None
+        self.char = None     
+        self.dat_data = None
+        self.motion_id = None
+        self.montion_sample_rate = None
+        self.motion_resolution = None
+        self.acc_range = None
+        self.gyr_range = None
+        self.signed = None
+        self.user_gender = None
+        self.user_height = None
+        self.user_weight = None
+        self.user_age = None
+
+    def attribute_parser(self, parameters, cmd):
+        
+        character, self.dat_data = parameters.split(b"\r\n+DAT:", 1) 
+        self.type, character = character.split(b",", 1)
+        type_int = int(self.type, 16)
+                
+        if not (type_int & (1 << 2)) and not(type_int & (1 << 3)) \
+            and not (type_int & (1<<5)) and not (type_int & (1<<7)):
+            self.len = character
+                      
+        else:
+            print("y")  
+            if (type_int & (1 << 2)) and (type_int & (1 << 3)):
+                print("a")
+                self.char = character.split(b",")            
+                self.motion_id = int(self.char.pop(0))
+                self.montion_sample_rate = int(self.char.pop(0))
+                self.motion_resolution = int(self.char.pop(0))
+                self.acc_range = int(self.char.pop(0))
+                self.gyr_range = int(self.char.pop(0))
+                # char_list = [self.motion_id, self.montion_sample_rate, \
+                #              self.motion_resolution, self.acc_range, self.gyr_range]
+                
+                # for char in char_list:
+                #     char = int(self.char.pop[0])                 
+                                 
+                
+            elif (type_int & (1 << 2)) and not (type_int & (1 << 3)):
+                print("b")
+                self.char = character.split(",")
+                self.char = character.split(b",")            
+                self.motion_id = int(self.char.pop(0))
+                self.montion_sample_rate = int(self.char.pop(0))
+                self.motion_resolution = int(self.char.pop(0))
+                self.acc_range = int(self.char.pop(0))
+                
+                # char_list = [self.motion_id, self.montion_sample_rate, \
+                #              self.motion_resolution, self.acc_range]
+                # for x in char_list:
+                #     x = self.char.pop(0)
+            elif (type_int & (1 << 3)) and not (type_int ^ (1 << 2)):
+                print("c")
+                self.char = character.split(",")
+                self.char = character.split(b",")            
+                self.motion_id = int(self.char.pop(0))
+                self.montion_sample_rate = int(self.char.pop(0))
+                self.motion_resolution = int(self.char.pop(0))
+                self.gyr_range = int(self.char.pop(0))
+
+                # char_list = [self.motion_id, self.montion_sample_rate, \
+                #              self.motion_resolution,  self.gyr_range]
+                # for x in char_list:
+                #     x = self.char.pop(0)
+            if type_int & (1 << 5):
+                print("d")
+
+                self.ecg_sample_rate = int(self.char.pop(0))
+                self.ecg_adc_resolution = int(self.char.pop(0))
+                self.ecg_adc_vref = int(self.char.pop(0))
+                self.ecg_amp_gain = (self.char.pop(0))
+                self.ecg_amp_offset = (self.char.pop(0))
+                self.signed = int(self.char.pop(0))
+
+                # char_list = [self.ecg_sample_rate, self.ecg_adc_resolution, self.ecg_adc_vref, \
+                #              self.ecg_amp_gain, self.ecg_amp_offset, self.signed]
+                # for x in char_list:
+                #     x = self.char.pop(0)
+                # print("char_list_int_ecg:", self.char)
+
+            if type_int & (1 << 7):
+                print("f")
+                self.user_gender = int(self.char.pop(0))
+                self.user_height = int(self.char.pop(0))
+                self.user_weight = int(self.char.pop(0))
+                self.user_age = int(self.char.pop(0))
+
+                # char_list = [self.user_gender, self.user_height, \
+                #              self.user_weight, self.user_age]
+                # for x in char_list:
+                #     x = self.char.pop(0)
+
+    def create_dat_parser(self):
+        
+        parser_object = dat_parser_factory.Factory()
+        
+        data_list = self.dat_data.split(b"+DAT:")
+        for x in data_list:  
+            parser_object.distrubute_dat_data(x)
+
+        return parser_object
 
 
 def create_parser(cmd):
@@ -378,6 +487,8 @@ def create_parser(cmd):
         return SysGetSensorRange()
     elif cmd == 27:
         return SysSetSensorRange()
+    elif cmd == 28:
+        return SysSendRawData()
 
 
 

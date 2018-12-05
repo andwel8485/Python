@@ -29,6 +29,7 @@ class CmdType():
     SET_ODR = 25 
     GET_RANGE = 26 
     SET_RANGE = 27
+    START_DAT = 28
     
 
 CMD_STRING_MAP = {
@@ -58,7 +59,8 @@ CMD_STRING_MAP = {
     "start calib": CmdType.START_CALIB,
     "set odr": CmdType.SET_ODR,
     "get range": CmdType.GET_RANGE, 
-    "set range": CmdType.SET_RANGE
+    "set range": CmdType.SET_RANGE,
+    b"start dat": CmdType.START_DAT
 }
 
 # cli = "set range"
