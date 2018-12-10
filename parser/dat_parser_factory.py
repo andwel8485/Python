@@ -17,7 +17,7 @@ class Factory():
 
 
     def distrubute_dat_data(self, data):
-        
+        data = data.split(b"+DAT:")[1]
         self.len = data[:2]     
         data = data[2:]
         data_type = data[:2]
@@ -35,13 +35,12 @@ class Factory():
             data = data[8:]
         if type_int & (1 << 2):
             self.acc += self.time_off_set
-            self.acc += data[:600]
-            data = data[600:]
+            self.acc += data[:150]
+            data = data[150:]
         if type_int & (1 << 3):
             self.gyr += self.time_off_set
-            self.gyr += data[:600]
-            data = data[600:]
-
+            self.gyr += data[:150]
+            data = data[150:]
         if type_int & (1 << 4):
             self.resb += self.time_off_set
             self.resb += data[:1]
@@ -76,11 +75,17 @@ class Factory():
 
 # data = "120300112345678"
 # byte_content = b"\r\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\n"
-# fc = Factory()
-# fc.distrubute_dat_data(byte_content)
-# print(fc.hrb)
-# print(fc.rrib)
-# print(fc.gyr)
+fc = Factory()
+content = b"+DAT:\x14\x00S\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x00\x00r\x01\x00\xff\r\n" 
+
+fc.distrubute_dat_data(content)
+
+print(fc.hrb)
+print(fc.rrib)
+print(fc.gyr)
+
+# content = b"+DAT:\x14\x00S\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x00\x00r\x01\x00\xff\r\n" 
+# print(content.split(b"+DAT:")[1])
 
 
 

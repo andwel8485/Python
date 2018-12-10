@@ -1,5 +1,4 @@
-import parser_class
-import parser_type
+
 
 class CliResponseParser():
     def __init__(self):
@@ -10,7 +9,7 @@ class CliResponseParser():
             
            
     def mapping_parser(self, cmd, parameters, parser_type):
-        parser_object = parser_class.create_parser(parser_type)
+        parser_object =cmd_response_parsers.create_parser(parser_type)
         
         parser_object.attribute_parser(parameters, cmd)
         return parser_object       
@@ -21,32 +20,36 @@ class CliResponseParser():
         self.type_key = self.cmd.split(b"=")[1]        
         self.type_int = parser_type.CMD_STRING_MAP.get(self.type_key)
 
-    def create_parser(self, input_repsonse):
+    def create_cmd_parser(self, input_repsonse):
         self.cli_cmd(input_repsonse)
         return self.mapping_parser(self.cmd, self.parameters, self.type_int)
 
 
 
-
-with open("D:\Python\\077f.txt", "rb") as f:
-    content = f.read()
+# with open("D:\Python\\dat_000c.txt", "rb") as f:
+#     content = f.read()
+#     print(content)
 # content = b"CLI=start dat:077f,1,25,16,4,250,250,24,2400,6.000000,0.000000,1,65\r\n+DAT:\x14\x00S\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x00\x00r\x01\x00\xff\r\n" 
-cli = CliResponseParser()
-
-send_data_obj = cli.create_parser(content)
-
-data_parser_obj = send_data_obj.create_dat_parser()
-
+# cli = CliResponseParser()
+# send_data_obj = cli.create_cmd_parser(content)
+# data_parser_obj = send_data_obj.create_dat_parser()
+print(float(b'6.000000'))
 # print(cli.parameters)
-print(cli.type_key)
-print(cli.type_int)
+
 # print(send_data_obj.dat_data)
 
-print("Acc:",data_parser_obj.acc)
-print("Gyr:",data_parser_obj.gyr)
-print("ECG:", data_parser_obj.ecg_raw_data)
-print("RESB:", data_parser_obj.resb)
-print("TEM:", send_data_obj.ecg_amp_gain)
+
+# print("HRB:", data_parser_obj.hrb)
+# print("RRIB", data_parser_obj.rrib)
+# print("Acc:",data_parser_obj.acc)
+# print("Gyr:",data_parser_obj.gyr)
+# print("ECG:", data_parser_obj.ecg_raw_data)
+# print("CNTB:", data_parser_obj.cntb)
+# print("RSCB:", data_parser_obj.rscb)
+# print("RESB:", data_parser_obj.resb)
+# print("TEM:", data_parser_obj.temperature)
+# print("POST:", data_parser_obj.posture)
+# print("AF:", data_parser_obj.af)
 # get_sysobj = cli.create_parser("CLI=get status:MAC=xx.xx.xx.xx.xx.xx,Project_Name=nnnnnn,CLI_Version=Vc,Boot_Version=Vb.b.b,HW_Version=Vh.h.h,FW_Version=Vf.f.f,CLOCK=YYYYMMDDhhmmss,Storage_Capacity=tttttt,Last_Capacity=rrrrrr,len")
 # set_sysobj = cli.create_parser("CLI=set reset:x,len")
 # rtc_object = cli.create_parser("CLI=set RTC:YYYYMMDDhhmmss,len")
@@ -69,7 +72,7 @@ print("TEM:", send_data_obj.ecg_amp_gain)
 # stop_send_binary_object = cli.create_parser("CLI=stop dat:len")
 # stop_send_cmp_object = cli.create_parser("CLI=stop dat_cmp:len")
 # set_ecg_package_object = cli.create_parser("CLI=set dat_eps:size,len")
-# get_ecg_package_object = cli.create_parser("CLI=get dat_eps:size,len")
+# get_ecg_package_object = cli.create_parser(content)
 # calbri_acc_object = cli.create_parser("CLI=start calib:sel,len")
 # montion_datarate_object = cli.create_parser("CLI=set odr:rate,len")
 # get_sensor_range_object = cli.create_parser("CLI=get range:x rang,len")

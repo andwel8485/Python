@@ -57,7 +57,7 @@ CMD_STRING_MAP = {
     b"file_test": CmdType.FILE_TEST,
     b"get dat_char": CmdType.GET_DAT_CHAR,
     b"start dat": CmdType.START_DAT,
-    b"stop dat":  CmdType.STOP_DAT, 
+    b"stop dat": CmdType.STOP_DAT, 
     b"start dad_cmp": CmdType.START_DAT_CMP,
     b"stop dat_cmp": CmdType.STOP_DAT_CMP,
     b"set dat_eps": CmdType.SET_DAT_EPS, 
