@@ -5,23 +5,29 @@ import dat_parser
 cli_fac = cmd_response_parsers.CliResponseParser()
 dat_fac = dat_parser.DatParser()
 
-
-
 CR_LN = b"\r\n"
 DAT_STRING = b"+DAT:"
 CLI_STRING = b"CLI="
 LEN_LEN = 2
+
 ERROR_STRING_TYPE1 = b"Command is not found\r\n"
 ERROR_STRING_TYPE2 = b"Invalid Parameter\r\n"
 ERROR_STRING_TYPE3 = b"Command parameter error\r\n"
+
 CMD_FUNC = None
 DAT_FUNC = None
 
+RESPONSE_COMPLETE = 3
+RESPONSE_WRONG_LENTH = 2
+RESPONSE_INCOMPLETE = 1
+
 BUFFER = b""
+COMPLETE_RESPONSE = []
 
 
 def _first_find_dat_in_buffer(dat_index):
     global BUFFER
+    global COMPLETE_RESPONSE
     print("in first find dat")
 
     start_index = dat_index
@@ -30,11 +36,11 @@ def _first_find_dat_in_buffer(dat_index):
     end_index = binary_index + dat_len + len(CR_LN) + LEN_LEN
     dat_complete_parser = BUFFER[start_index:end_index]
     if len(dat_complete_parser) < dat_len + len(DAT_STRING) + len(CR_LN) + LEN_LEN:
-        return None
+        return RESPONSE_INCOMPLETE
     if dat_complete_parser[-2:] != CR_LN:
         # print("clean BUFFER")
         BUFFER = BUFFER[binary_index:]
-        return None
+        return RESPONSE_WRONG_LENTH
         
     # print("BUFFER fine")
     BUFFER = BUFFER[end_index:]
@@ -42,18 +48,20 @@ def _first_find_dat_in_buffer(dat_index):
     
     # print("dat:",dat_complete_parser)
     dat_obj = dat_fac.distrubute_dat_data(dat_complete_parser)
+    COMPLETE_RESPONSE.append(dat_obj)
     print(type(dat_obj))
-    return dat_obj
+    return RESPONSE_COMPLETE
 
 def _first_find_cmd_in_buffer(cmd_index):
     global BUFFER
+    global COMPLETE_RESPONSE
     
     start_index = cmd_index
     BUFFER = BUFFER[start_index:]
     end_index = BUFFER.find(CR_LN)
     if end_index == -1:  
         print("fail")
-        return None    
+        return RESPONSE_INCOMPLETE   
     cmd_complete_parser = BUFFER[start_index:end_index]
 
     #check if cmd_complete parser has missing dat between "CLI=" and "\r\n"
@@ -65,25 +73,30 @@ def _first_find_cmd_in_buffer(cmd_index):
             print(len(cmd_complete_parser.rsplit(b",", 1)[0]))
             print(int(len_of_cmd_complete_parser))
             BUFFER = BUFFER[(end_index + len(CR_LN)):]
-            return None
+            return RESPONSE_WRONG_LENTH
     except ValueError:
         print("value fail")
         BUFFER = BUFFER[(end_index + len(CR_LN)):]
         print(BUFFER)
-        return None
+        return RESPONSE_WRONG_LENTH
 
     cli_obj = cli_fac.create_cmd_parser(cmd_complete_parser)
+    COMPLETE_RESPONSE.append(cli_obj)
     if cli_fac.type_int == 21:
         dat_fac.setting_parameters(cli_obj)
-    print(BUFFER)
-    print(end_index)
 
-    # print("cmd:",cmd_complete_parser)
+    print("before buffer clean:", BUFFER)
+    print("end index:", end_index)
     print("after process")
     BUFFER = BUFFER[end_index:]
     print("buffer:", BUFFER)
-    
-    return cli_obj
+    return RESPONSE_COMPLETE
+
+def upload(complete_response_list):
+    complete_response = complete_response_list[0]
+    complete_response_list.pop(0)
+    return complete_response
+
     
 
 def _find_error_in_buffer(error_index):
@@ -96,9 +109,17 @@ def _find_error_in_buffer(error_index):
     BUFFER = BUFFER[end_index:]
     return error_complete_data
 
+def _find_min(data_list):
+    index_list = sorted(data_list)
+    for value in index_list:
+        if value  >= 0: 
+            return value
+    return -1
+    
     
 def check_buffer(buffer):
     global BUFFER
+    global COMPLETE_RESPONSE
     print("BUFFER before loop:", BUFFER)
  
     while BUFFER != b"":
@@ -107,91 +128,153 @@ def check_buffer(buffer):
         # print("global:", BUFFER)
         dat_index = BUFFER.find(DAT_STRING)
         cmd_index = BUFFER.find(CLI_STRING)
-        error_index = max(BUFFER.find(ERROR_STRING_TYPE1), BUFFER.find(ERROR_STRING_TYPE2), BUFFER.find(ERROR_STRING_TYPE3))
+        error_index = _find_min([BUFFER.find(ERROR_STRING_TYPE1), \
+                                 BUFFER.find(ERROR_STRING_TYPE2), \
+                                 BUFFER.find(ERROR_STRING_TYPE3)])
+
+        startdata = _find_min([dat_index, cmd_index, error_index])
+
+        if startdata == -1:
+            break
+        
+        elif startdata == dat_index:
+            result = _first_find_dat_in_buffer(dat_index)
+            if result == RESPONSE_INCOMPLETE:
+                break
+            elif result == RESPONSE_WRONG_LENTH:
+                continue
+            elif result == RESPONSE_COMPLETE:
+                upload_complete_dat(upload(COMPLETE_RESPONSE))
+
+        elif startdata == cmd_index:
+            result = _first_find_cmd_in_buffer(cmd_index)
+            if result == RESPONSE_INCOMPLETE:
+                print("not enougj lenth ")
+                break
+            elif result == RESPONSE_WRONG_LENTH:
+                print("continue")
+                continue
+            elif result == RESPONSE_COMPLETE:
+                print("success return obj")
+                upload_complete_cmd(upload(COMPLETE_RESPONSE))  
+
+        elif startdata == error_index:
+            print("find error_index")
+            error_messege = _find_error_in_buffer(error_index)
+            upload_complete_cmd(error_messege)
+            continue
+
+
+
+
         # print(error_index)
         # print(dat_index)
         # print(cmd_index)
 
-        if (dat_index == -1) and (cmd_index == -1) and (error_index == -1):
-            break
+        # if (dat_index == -1) and (cmd_index == -1) and (error_index == -1):
+        #     break
         
-        elif (dat_index > -1) and (cmd_index == -1) and (error_index == -1):
-            print("only DAT")
-            obj = _first_find_dat_in_buffer(dat_index)
-            if obj:
-                upload_complete_dat(obj)
-            else:
-                break
-        elif (dat_index == -1) and (cmd_index > -1) and (error_index == -1):
-            print("only CMD ")
-            obj = _first_find_cmd_in_buffer(cmd_index)
-            if obj:
-                upload_complete_cmd(obj)
-            else:
-                break
-        elif (dat_index == -1) and (cmd_index == -1) and (error_index > -1):
-            error_messege = _find_error_in_buffer(error_index)
-            upload_complete_cmd(error_messege)
+        # elif (dat_index > -1) and (cmd_index == -1) and (error_index == -1):
+        #     print("only DAT")
+        #     result = _first_find_dat_in_buffer(dat_index)
+        #     if result == RESPONSE_INCOMPLETE:
+        #         break
+        #     elif result == RESPONSE_WRONG_LENTH:
+        #         continue
+        #     elif result == RESPONSE_COMPLETE:
+        #         upload_complete_dat(upload(COMPLETE_RESPONSE))
+
+        # elif (dat_index == -1) and (cmd_index > -1) and (error_index == -1):
+        #     print("only CMD ")
+        #     obj = _first_find_cmd_in_buffer(cmd_index)
+        #     if obj == RESPONSE_INCOMPLETE:
+        #         print("not enougj lenth ")
+        #         break
+        #     elif obj == RESPONSE_WRONG_LENTH:
+        #         print("continue")
+        #         continue
+        #     elif obj == RESPONSE_COMPLETE:
+        #         print("success return obj")
+        #         upload_complete_cmd(upload(COMPLETE_RESPONSE))  
+
+        # elif (dat_index == -1) and (cmd_index == -1) and (error_index > -1):
+        #     error_messege = _find_error_in_buffer(error_index)
+        #     upload_complete_cmd(error_messege)
             
-        elif (dat_index > -1) and (cmd_index > -1) and (error_index == -1):
-            print("DAT&CMD")
-            if dat_index < cmd_index:
-                print("DAT first")
-                obj = _first_find_dat_in_buffer(dat_index)
-                if obj:
-                    upload_complete_dat(obj)
-                else:
-                    break
-            else:
-                print("CMD first")
-                obj = _first_find_cmd_in_buffer(cmd_index)
-                print(obj)
-                if obj:
-                    print("processing")
-                    upload_complete_cmd(obj)
-                else:
-                    break
+        # elif (dat_index > -1) and (cmd_index > -1) and (error_index == -1):
+        #     print("DAT&CMD")
+        #     if dat_index < cmd_index:
+        #         print("DAT first")
+        #         obj = _first_find_dat_in_buffer(dat_index)
+        #         if obj:
+        #             upload_complete_dat(obj)
+        #         else:
+        #             break
+        #     else:
+        #         print("CMD first")
+        #         obj = _first_find_cmd_in_buffer(cmd_index)
+        #         print(obj)
+        #         if obj == RESPONSE_INCOMPLETE:
+        #             print("not enougj lenth")
+        #             break
+        #         elif obj == RESPONSE_WRONG_LENTH:
+        #             print("continue")
+        #             continue
+        #         elif obj == RESPONSE_COMPLETE:
+        #             print("success return obj")
+        #             upload_complete_cmd(upload(COMPLETE_RESPONSE))
 
-        elif (dat_index > -1) and (cmd_index == -1) and (error_index > -1):
-            if dat_index < error_index:
-                obj = _first_find_dat_in_buffer(dat_index)
-                if obj:
-                    upload_complete_dat(obj)
-                else:
-                    break
-            else:
-                error_messege = _find_error_in_buffer(error_index)
-                upload_complete_cmd(error_messege)
+        # elif (dat_index > -1) and (cmd_index == -1) and (error_index > -1):
+        #     if dat_index < error_index:
+        #         obj = _first_find_dat_in_buffer(dat_index)
+        #         if obj:
+        #             upload_complete_dat(obj)
+        #         else:
+        #             break
+        #     else:
+        #         error_messege = _find_error_in_buffer(error_index)
+        #         upload_complete_cmd(error_messege)
 
-        elif (dat_index == -1) and (cmd_index > -1) and (error_index > -1):
-            if cmd_index < error_index:
-                obj = _first_find_cmd_in_buffer(cmd_index)
-                if obj:
-                    upload_complete_cmd(obj)
-                else:
-                    break
-            else:
-                error_messege = _find_error_in_buffer(error_index)
-                upload_complete_cmd(error_messege)
+        # elif (dat_index == -1) and (cmd_index > -1) and (error_index > -1):
+        #     if cmd_index < error_index:
+        #         obj = _first_find_cmd_in_buffer(cmd_index)
 
-        elif (dat_index > -1) and (cmd_index > -1) and (error_index > -1):
-            if min(dat_index, cmd_index, error_index) == dat_index:
-                obj = _first_find_dat_in_buffer(dat_index)
-                if obj:
-                    upload_complete_dat(obj)
-                else:
-                    break
-            elif  min(dat_index, cmd_index, error_index) == cmd_index:
-                obj = _first_find_cmd_in_buffer(cmd_index)
-                if obj:
-                    upload_complete_cmd(obj)
-                else:
-                    error_messege = _find_error_in_buffer(error_index)
-                    upload_complete_cmd(error_messege)
-            
-            elif min(dat_index, cmd_index, error_index) == error_index:
-                error_messege = _find_error_in_buffer(error_index)
-                upload_complete_cmd(error_messege)
+        #         if obj == RESPONSE_INCOMPLETE:
+        #             print("not enougj lenth ")
+        #             break
+        #         elif obj == RESPONSE_WRONG_LENTH:
+        #             print("continue")
+        #             continue
+        #         elif obj == RESPONSE_COMPLETE:
+        #             print("success return obj")
+        #             upload_complete_cmd(upload(COMPLETE_RESPONSE))
+        #     else:
+        #         error_messege = _find_error_in_buffer(error_index)
+        #         upload_complete_cmd(error_messege)
+
+        # elif (dat_index > -1) and (cmd_index > -1) and (error_index > -1):
+        #     if min(dat_index, cmd_index, error_index) == dat_index:
+        #         obj = _first_find_dat_in_buffer(dat_index)
+        #         if obj:
+        #             upload_complete_dat(obj)
+        #         else:
+        #             break
+        #     elif min(dat_index, cmd_index, error_index) == cmd_index:
+        #         obj = _first_find_cmd_in_buffer(cmd_index)
+
+        #         if obj == RESPONSE_INCOMPLETE:
+        #             print("not enougj lenth ")
+        #             break
+        #         elif obj == RESPONSE_WRONG_LENTH:
+        #             print("continue")
+        #             continue
+        #         elif obj == RESPONSE_COMPLETE:
+        #             print("success return obj")
+        #             upload_complete_cmd(upload(COMPLETE_RESPONSE))
+                
+        #     elif min(dat_index, cmd_index, error_index) == error_index:
+        #         error_messege = _find_error_in_buffer(error_index)
+        #         upload_complete_cmd(error_messege)
    
     
 def recieve_data_to_buffer(data):

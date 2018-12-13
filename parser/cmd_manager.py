@@ -4,6 +4,7 @@ import threading
 
 CMD_LIST = []
 DAT_LIST = []
+MATCH_CMD_LIST = []
 TIMER = None
 
 
@@ -24,21 +25,18 @@ def store_cmd(cmd):   #for UI
     TIMER = threading.Timer(5, _remove_cmd_from_list)
     TIMER.start()
     # _send_cmd()
-    
-    
-    
-    
+      
+   
 def recieve_cmd_result():    #for UI
-    global CMD_LIST
+    global MATCH_CMD_LIST
     global TIMER
-    while CMD_LIST:
-
-        if CMD_LIST[0].cmd_response_obj:
-            result = CMD_LIST[0]
-            CMD_LIST.pop(0)
-            print("CMD_LIST after success return:", CMD_LIST)
-            TIMER.cancel()
-            return result
+    while MATCH_CMD_LIST:
+        
+        result = MATCH_CMD_LIST[0]
+        MATCH_CMD_LIST.pop(0)
+        print("CMD_LIST& MATCH_CMD_LIST after success return:", CMD_LIST, MATCH_CMD_LIST)
+        TIMER.cancel()
+        return result
             
         
 
@@ -85,6 +83,7 @@ def _recieve_dat(dat_response):
 
 def _recieve_cmd(cmd_response):
     global CMD_LIST 
+    global MATCH_CMD_LIST
     print("in recieve")
     
     try:
@@ -94,10 +93,19 @@ def _recieve_cmd(cmd_response):
            cmd_response == parser_frame.ERROR_STRING_TYPE2 or \
            cmd_response == parser_frame.ERROR_STRING_TYPE3:
            CMD_LIST[0].cmd_response_obj = cmd_response
+           MATCH_CMD_LIST.append(CMD_LIST[0])
+           print("MATCH_CMD_LIST before return:", MATCH_CMD_LIST)
+           CMD_LIST.pop(0)
+           print("error append to command")
+
            
 
         elif cmd_response.type_key in CMD_LIST[0].type_key:
             CMD_LIST[0].cmd_response_obj = cmd_response
+            MATCH_CMD_LIST.append(CMD_LIST[0])
+            print("match response append to command")
+            print("MATCH_CMD_LIST before return:", MATCH_CMD_LIST)
+            CMD_LIST.pop(0)
 
         else:
             print("Wrong result")
@@ -141,6 +149,7 @@ data14 = b"CLI=set MFG:1,SMP_MFG,22\r\n"
 data15 = b"CLI=get UTC:20180530120000,80,30\r\n"
 data16 = b"CLI=get status:MAC=1a.2b.3c.4d.5e.6f,Project_Name=CORPO,CLI_Version=V0.0.34,Boot_Version=V1.0.5,HW_Version=V5350,FW_Version=V1.0.5,RTC=20180530120000,Storage_Capacity=906543,Storage_Last_Capacity=54321,202\r\n"
 data_special_case = b"CLI=get file_contents:nnnnnnnn,ssss,ee\r\nCLI=get UTC:20180530120000,80,30\r\n"
+data_special_case1 = b"Command parameter error\r\nCLI=set MFG:1,SMP_MFG,22\r\n"
 
 
 
@@ -166,10 +175,10 @@ if __name__ == "__main__":
     initial()
 
     ###send command       put command obj in CMD LIST
-    store_cmd(cmd15)
+    store_cmd(cmd14)
 
     #Assume the return data
-    parser_frame.recieve_data_to_buffer(data_special_case)
+    parser_frame.recieve_data_to_buffer(data_special_case1)
 
     obj = recieve_cmd_result()
     dat_data()
