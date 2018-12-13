@@ -38,7 +38,7 @@ class SysGetStatus(CommandStructure):
         self.mac = None
         self.project_name = None
         self.cli_version  = None
-        self.boost_version = None
+        self.boot_version = None
         self.hw_version = None
         self.fw_version = None
         self.rtc = None   
@@ -48,8 +48,9 @@ class SysGetStatus(CommandStructure):
 
     def attribute_parser(self, parameters, type_key):   
         self.type_key = type_key 
-        self.mac, self.project_name, self.cli_version, self.boost_version, self.hw_version, self.fw_version, \
-        self.rtc, self.storage_capacity, self.storage_last_capacity, self.len = (parameters.split(b","))   
+        self.mac, self.project_name, self.cli_version, self.boot_version, \
+        self.fw_version, self.hw_version, self.rtc, self.storage_capacity, \
+        self.storage_last_capacity, self.len = (parameters.split(b","))   
 
 class SysSetSystem(CommandStructure):
     def __init__(self):
@@ -114,9 +115,8 @@ class SysSetManufactureCode(CommandStructure):
         self.status = None
              
     def attribute_parser(self, parameters, type_key): 
-        self. type_key = type_key  
-        content, self.len = parameters.split(b",")
-        self.status, self.password = content.split(b" ")
+        self. type_key = type_key
+        self.status, self.password, self.len = parameters.split(b",")
 
 class SysGetResetCounter(CommandStructure):
     def __init__(self):
@@ -177,8 +177,7 @@ class SysGetPersonalInformation(CommandStructure):
               
     def attribute_parser(self, parameters, type_key): 
         self.type_key = type_key  
-        content, self.len = parameters.split(b",")
-        self.gender, self.height, self.weight, self.age = content.split()
+        self.gender, self.height, self.weight, self.age, self.len = parameters.split(b",")
 
 class SysGetFileList(CommandStructure):
     def __init__(self):
@@ -210,8 +209,7 @@ class SysGetFileContents(CommandStructure):
              
     def attribute_parser(self, parameters, type_key): 
         self.type_key = type_key  
-        file_information, self.file_content = parameters.split(b"\r\n")
-        self.file_name, self.file_start,self.file_end, self.len = file_information.split(b",")
+        self.file_name, self.file_start,self.file_end, self.len = parameters.split(b",")
 
 class SysRemoveFile(CommandStructure):
     def __init__(self):

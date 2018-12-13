@@ -68,6 +68,8 @@ def _first_find_cmd_in_buffer(cmd_index):
             return None
     except ValueError:
         print("value fail")
+        BUFFER = BUFFER[(end_index + len(CR_LN)):]
+        print(BUFFER)
         return None
 
     cli_obj = cli_fac.create_cmd_parser(cmd_complete_parser)
@@ -77,9 +79,10 @@ def _first_find_cmd_in_buffer(cmd_index):
     print(end_index)
 
     # print("cmd:",cmd_complete_parser)
-    BUFFER = BUFFER[end_index:]
-    print(BUFFER)
     print("after process")
+    BUFFER = BUFFER[end_index:]
+    print("buffer:", BUFFER)
+    
     return cli_obj
     
 
@@ -113,13 +116,14 @@ def check_buffer(buffer):
             break
         
         elif (dat_index > -1) and (cmd_index == -1) and (error_index == -1):
-            print("DAT first")
+            print("only DAT")
             obj = _first_find_dat_in_buffer(dat_index)
             if obj:
                 upload_complete_dat(obj)
             else:
                 break
         elif (dat_index == -1) and (cmd_index > -1) and (error_index == -1):
+            print("only CMD ")
             obj = _first_find_cmd_in_buffer(cmd_index)
             if obj:
                 upload_complete_cmd(obj)
@@ -192,12 +196,12 @@ def check_buffer(buffer):
     
 def recieve_data_to_buffer(data):
     global BUFFER 
-    try:
-        print("dat", data)
-        BUFFER += data
-        check_buffer(BUFFER)
-    except:
-        print("worng")
+    
+    # print("dat", data)
+    BUFFER += data
+    check_buffer(BUFFER)
+    # except:
+    #     print("worng")
 
 def upload_complete_cmd(obj):  
     print("In parser frame upload_complete_cmd func")

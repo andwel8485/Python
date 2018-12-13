@@ -7,8 +7,6 @@ DAT_LIST = []
 TIMER = None
 
 
-
-
 class CmdFrame():
     def __init__(self, cmd):
         self.type_key = cmd
@@ -134,6 +132,16 @@ data5 = b"CLI=get dat_char:999,1,25,16,4,250,250,24,2400,6.000000,0.000000,1,1,1
 data6 = b"CLI=start dat:0020,250,24,2400,6.000000,0.000000,1,51\r\n+DAT:\x05\x00\x01\r\n\x00\x00\r\n+DAT:\x05\x00\x01\x00\x01\x00\x00\r\n"
 data7 = b"CLI=get range:1 250,19\r\n"
 data8 = b"CLI=start calib:Acc calibration pass,37\r\n"
+data9 = b"CLI=file_test:test1.dat,12345,SEQU,35\r\n"
+data10 = b"CLI=get file_contents:HR_20170210133100.dat,0,1532,51\r\n"
+data11 = b"CLI=get file_size:6543,23\r\n"
+data12 = b"CLI=get pi:1,180,70,25,23\r\n"
+data13 = b"CLI=set ResetCounter:0,23\r\n"
+data14 = b"CLI=set MFG:1,SMP_MFG,22\r\n"
+data15 = b"CLI=get UTC:20180530120000,80,30\r\n"
+data16 = b"CLI=get status:MAC=1a.2b.3c.4d.5e.6f,Project_Name=CORPO,CLI_Version=V0.0.34,Boot_Version=V1.0.5,HW_Version=V5350,FW_Version=V1.0.5,RTC=20180530120000,Storage_Capacity=906543,Storage_Last_Capacity=54321,202\r\n"
+data_special_case = b"CLI=get file_contents:nnnnnnnn,ssss,ee\r\nCLI=get UTC:20180530120000,80,30\r\n"
+
 
 
 
@@ -145,29 +153,36 @@ cmd5 = b"SYS get dat_char 999\r\n"
 cmd6 = b"SYS start dat 0020\r\n"
 cmd7 = b"SYS get range 1\r\n"
 cmd8 = b"SYS start calib 1\r\n"
+cmd9 = b"SYS set file_test test1.dat 12345 SEQU\r\n"
+cmd10 = b"SYS get file_contents HR_20170210133100.dat 0 1532\r\n"
+cmd11 = b"SYS get file_size HR_201702101143100.dat\r\n"
+cmd12 = b"SYS get pi\r\n"
+cmd13 = b"SYS set ResetCounter 0\r\n"
+cmd14 = b"SYS set MFG 1 SMP_MFG\r\n"
+cmd15 = b"SYS get UTC\r\n"
+cmd16 = b"SYS get status\r\n"
 
+if __name__ == "__main__":
+    initial()
 
+    ###send command       put command obj in CMD LIST
+    store_cmd(cmd15)
 
-initial()
+    #Assume the return data
+    parser_frame.recieve_data_to_buffer(data_special_case)
 
-###send command       put command obj in CMD LIST
-store_cmd(cmd6)
+    obj = recieve_cmd_result()
+    dat_data()
+    print(DAT_LIST)
+    try:
+        
+        print("position of pass_return obj:", obj.cmd_response_obj)
+        print("lenth of pass reutrn:", obj.cmd_response_obj.len)
+        
+        
 
-#Assume the return data
-parser_frame.recieve_data_to_buffer(data_dat)
-
-obj = recieve_cmd_result()
-dat_data()
-print(DAT_LIST)
-try:
-    
-    print("position of pass_return obj:", obj.cmd_response_obj)
-    print("lenth of pass reutrn:", obj.cmd_response_obj.len)
-    
-    
-
-except AttributeError:
-    print("No valid data return")
+    except AttributeError:
+        print("No valid data return")
 
 
 
