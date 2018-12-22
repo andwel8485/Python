@@ -10,7 +10,7 @@ TIMER = None
 
 class CmdFrame():
     def __init__(self, cmd):
-        self.type_key = cmd
+        self.cmd = cmd
         self.cmd_response_obj = None
 
 
@@ -30,13 +30,14 @@ def store_cmd(cmd):   #for UI
 def recieve_cmd_result():    #for UI
     global MATCH_CMD_LIST
     global TIMER
-    while MATCH_CMD_LIST:
-        
-        result = MATCH_CMD_LIST[0]
-        MATCH_CMD_LIST.pop(0)
-        print("CMD_LIST& MATCH_CMD_LIST after success return:", CMD_LIST, MATCH_CMD_LIST)
-        TIMER.cancel()
-        return result
+    while CMD_LIST:
+
+        if MATCH_CMD_LIST:
+            result = MATCH_CMD_LIST[0]
+            MATCH_CMD_LIST.pop(0)
+            print("CMD_LIST& MATCH_CMD_LIST after success return:", CMD_LIST, MATCH_CMD_LIST)
+            TIMER.cancel()
+            return result
             
         
 
@@ -84,6 +85,7 @@ def _recieve_dat(dat_response):
 def _recieve_cmd(cmd_response):
     global CMD_LIST 
     global MATCH_CMD_LIST
+    global TIMER
     print("in recieve")
     
     try:
@@ -100,7 +102,7 @@ def _recieve_cmd(cmd_response):
 
            
 
-        elif cmd_response.type_key in CMD_LIST[0].type_key:
+        elif cmd_response.type_key in CMD_LIST[0].cmd:
             CMD_LIST[0].cmd_response_obj = cmd_response
             MATCH_CMD_LIST.append(CMD_LIST[0])
             print("match response append to command")
@@ -112,6 +114,8 @@ def _recieve_cmd(cmd_response):
             
     except IndexError:
         print("NO command waiting for response!!")
+        TIMER.cancel()
+        return
         
         
                 
